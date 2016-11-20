@@ -41,27 +41,27 @@ public class Kaggle {
 			
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			
-			HashMap<Integer, Integer> indices = new HashMap<Integer, Integer>();
-			HashMap<Integer, ArrayList<Integer>> adjLists = new HashMap<Integer, ArrayList<Integer>>();
+			HashMap<String, Integer> indices = new HashMap<String, Integer>();
+			HashMap<String, ArrayList<String>> adjLists = new HashMap<String, ArrayList<String>>();
 			
 			String line = null;
 			while((line = bufferedReader.readLine()) != null){
 				
 				String[] lineSep = line.split("\\s");
 				//Extract the actual head of the list
-				int curr = Integer.parseInt(lineSep[0].substring(0, lineSep[0].length() - 1));
+				String curr = lineSep[0].substring(0, lineSep[0].length() - 1);
 				indices.put(curr, indices.size());
 				//Construct the adjacency list
-				ArrayList<Integer> adjList = new ArrayList<Integer>();
+				ArrayList<String> adjList = new ArrayList<String>();
 				for(int i = 1; i < lineSep.length; i++)
-					adjList.add(Integer.parseInt(lineSep[i]));
+					adjList.add(lineSep[i]);
 				adjLists.put(curr, adjList);
 				
 			}
 			
 			bufferedReader.close();
 			fileReader.close();
-			EgoNetwork egoNetwork = new EgoNetwork(currIndex, indices, adjLists);
+			EgoNetwork egoNetwork = new EgoNetwork(Integer.toString(currIndex), indices, adjLists);
 			return egoNetwork;
 			
 		}
