@@ -62,6 +62,35 @@ public class Kaggle {
 			bufferedReader.close();
 			fileReader.close();
 			EgoNetwork egoNetwork = new EgoNetwork(Integer.toString(currIndex), indices, adjLists);
+			
+			//Add all the features
+			fileReader = new FileReader("features.txt");
+			bufferedReader = new BufferedReader(fileReader);
+			ArrayList<String> egoFeatures = new ArrayList<String>();
+			HashMap<String, ArrayList<String>> featureList = new HashMap<String, ArrayList<String>>();
+			
+			while((line = bufferedReader.readLine()) != null){
+				
+				String[] lineSep = line.split("\\s+");
+				if(indices.keySet().contains(lineSep[0])){
+					
+					ArrayList<String> features = new ArrayList<String>();
+					for(int i = 1; i < lineSep.length; i++)
+						features.add(lineSep[i].replace(";", " "));
+					featureList.put(lineSep[0], features);
+					
+				}
+				else if(Integer.toString(currIndex).equals(lineSep[0])){
+					
+					for(int i = 1; i < lineSep.length; i++)
+						egoFeatures.add(lineSep[i].replace(";", " "));
+					
+				}
+				
+			}
+			
+			bufferedReader.close();
+			fileReader.close();
 			return egoNetwork;
 			
 		}

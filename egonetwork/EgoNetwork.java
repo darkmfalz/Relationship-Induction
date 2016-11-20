@@ -15,7 +15,7 @@ public class EgoNetwork {
 	private int[][] adjMatrix;
 	//Similarity of features
 	//Has ego as last element
-	private double[][] simMatrix;
+	private double[][][] simMatrix;
 	
 	public EgoNetwork(String ego, HashMap<String, Integer> indices, HashMap<String, ArrayList<String>> adjLists){
 		
@@ -51,7 +51,7 @@ public class EgoNetwork {
 		HashMap<String, Integer> indices = reverseIndices();
 		
 		egoIndex = adjMatrix.length;
-		simMatrix = new double[adjMatrix.length+1][adjMatrix[0].length+1];
+		simMatrix = new double[adjMatrix.length+1][adjMatrix[0].length+1][];
 		Iterator<String> iterator = featureList.keySet().iterator();
 		
 		while(iterator.hasNext()){
