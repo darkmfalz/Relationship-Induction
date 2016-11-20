@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import ego.network.EgoNetwork;
+import egonetwork.EgoNetwork;
 
 public class Kaggle {
 	

@@ -1,4 +1,4 @@
-package ego.network;
+package egonetwork;
 
 import java.util.ArrayList;
 import java.util.HashMap;
