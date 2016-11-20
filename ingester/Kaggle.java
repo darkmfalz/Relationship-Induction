@@ -3,6 +3,8 @@ package ingester;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import ego.network.EgoNetwork;
 
@@ -38,17 +40,28 @@ public class Kaggle {
 		try{
 			
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
-			EgoNetwork egoNetwork = new EgoNetwork(currIndex);
+			
+			HashMap<Integer, Integer> indices = new HashMap<Integer, Integer>();
+			HashMap<Integer, ArrayList<Integer>> adjLists = new HashMap<Integer, ArrayList<Integer>>();
+			
 			String line = null;
-			//Obtain all distinct items and their supports
 			while((line = bufferedReader.readLine()) != null){
 				
-				System.out.println(currIndex + " " + line);
+				String[] lineSep = line.split("\\s");
+				//Extract the actual head of the list
+				int curr = Integer.parseInt(lineSep[0].substring(0, lineSep[0].length() - 1));
+				indices.put(curr, indices.size());
+				//Construct the adjacency list
+				ArrayList<Integer> adjList = new ArrayList<Integer>();
+				for(int i = 1; i < lineSep.length; i++)
+					adjList.add(Integer.parseInt(lineSep[i]));
+				adjLists.put(curr, adjList);
 				
 			}
 			
 			bufferedReader.close();
 			fileReader.close();
+			EgoNetwork egoNetwork = new EgoNetwork(currIndex, indices, adjLists);
 			return egoNetwork;
 			
 		}
