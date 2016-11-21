@@ -62,7 +62,7 @@ public class EgoNetwork {
 			
 			while(iterator2.hasNext()){
 				
-				String nextJ = iterator.next();
+				String nextJ = iterator2.next();
 				int j = indices.get(nextJ);
 				//We don't assume similarity is symmetric -- because, who knows? There are people with weird fetishes.
 				simMatrix[i][j] = sim.similarity(featureList.get(nextI), featureList.get(nextJ));
@@ -71,12 +71,13 @@ public class EgoNetwork {
 			
 		}
 			
-		for(int i = 0; i < simMatrix.length; i++){
+		for(int i = 0; i < simMatrix.length - 1; i++){
 			
 			simMatrix[egoIndex][i] = sim.similarity(egoFeatures, featureList.get(this.indices[i]));
 			simMatrix[i][egoIndex] = sim.similarity(featureList.get(this.indices[i]), egoFeatures);
 					
 		}
+		simMatrix[egoIndex][egoIndex] = sim.similarity(egoFeatures, egoFeatures);
 		
 	}
 	

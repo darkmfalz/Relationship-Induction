@@ -17,6 +17,7 @@ public class McAuleySimilarity implements ProfileSimilarity {
 		
 		//Get all possible features
 		TreeSet<String> validFeatures = new TreeSet<String>();
+		validFeatures.add("Adeeb");
 		int actualDepth = 0;
 		for(int i = 0; i < egoFeatures.size(); i++){
 			
@@ -175,6 +176,7 @@ public class McAuleySimilarity implements ProfileSimilarity {
 		
 		double sim[] = new double[indices.size()];
 		Iterator<String> iterator = simVec.keySet().iterator();
+		
 		while(iterator.hasNext()){
 			
 			String next = iterator.next();

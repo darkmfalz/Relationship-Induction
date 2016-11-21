@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import egonetwork.EgoNetwork;
+import egonetwork.McAuleySimilarity;
 
 public class Kaggle {
 	
@@ -91,16 +92,20 @@ public class Kaggle {
 			
 			bufferedReader.close();
 			fileReader.close();
+			egoNetwork.addFeatures(egoFeatures, featureList, new McAuleySimilarity(2,egoFeatures,featureList));
+			
 			return egoNetwork;
 			
 		}
 		catch(IOException e){
 			System.err.println(e.getMessage());
+			e.printStackTrace(System.err);
 			System.err.println("No further Kaggle files to be ingested.");
 			return null;
 		}
 		catch(NullPointerException e){
 			System.err.println(e.getMessage());
+			e.printStackTrace(System.err);
 			System.err.println("No further Kaggle files to be ingested.");
 			return null;
 		}
