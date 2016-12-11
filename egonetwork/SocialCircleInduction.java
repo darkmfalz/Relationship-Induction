@@ -1,7 +1,5 @@
 package egonetwork;
 
-import java.util.Arrays;
-
 public class SocialCircleInduction {
 	
 	public static String[][] McAuleyInduction(EgoNetwork egoNetwork){
@@ -98,13 +96,10 @@ public class SocialCircleInduction {
 			while(distanceOnParameters(theta, alpha, thetaPrev, alphaPrev) > precision){
 				
 				//Calculate value of function
-				//TODO add in OMEGA function to f
-				double f = lTheta(egoNetwork, currCircles, theta, alpha);
+				double f = lTheta(egoNetwork, currCircles, theta, alpha) - omega(theta);
 				System.out.println(f);
 				//Get partial derivative
-				//TODO add Omega function to gradientTheta
 				double[][] gradientTheta = gradientTheta(egoNetwork, currCircles, theta, alpha);
-				System.out.println("done!");
 				double[] gradientAlpha = gradientAlpha(egoNetwork, currCircles, theta, alpha);
 				//Select gamma
 				double c = 0.5;
@@ -115,11 +110,15 @@ public class SocialCircleInduction {
 				//The magnitude of the gradient
 				m = Math.sqrt(m);
 				//TODO add in OMEGA function
-				while((lTheta(egoNetwork, currCircles, vectorSum(theta, vectorScalarMultiple(gradientTheta, gamma/m)), vectorSum(alpha, vectorScalarMultiple(gradientAlpha, gamma/m)))) - f < gamma*c*m)
+				while((lTheta(egoNetwork, currCircles, vectorSum(theta, vectorScalarMultiple(gradientTheta, gamma/m)), vectorSum(alpha, vectorScalarMultiple(gradientAlpha, gamma/m))) - omega(vectorSum(theta, vectorScalarMultiple(gradientTheta, gamma/m)))) - f < gamma*c*m)
 					gamma = gamma*tau;
-				break;
+				thetaPrev = theta;
+				theta = vectorSum(theta, vectorScalarMultiple(gradientTheta, gamma/m));
+				alphaPrev = alpha;
+				alpha = vectorSum(alpha, vectorScalarMultiple(gradientAlpha, gamma/m));
 				
 			}
+			System.out.println(lTheta(egoNetwork, currCircles, theta, alpha) - omega(theta));
 			
 			//Optimize Circles
 			break;
@@ -209,6 +208,22 @@ public class SocialCircleInduction {
 		
 	}
 	
+	public static double omega(double[][] theta){
+		
+		double omega = 0.0;
+		for(int i = 0; i < theta.length; i++){
+			
+			for(int j = 0; j < theta[i].length; j++){
+				
+				omega += Math.abs(theta[i][j]);
+				
+			}
+			
+		}
+		return omega;
+		
+	}
+	
 	public static double[] gradientAlpha(EgoNetwork egoNetwork, Integer[][] circles, double[][] theta, double[] alpha){
 		
 		double[] gradientAlpha = new double[theta.length];
@@ -291,8 +306,13 @@ public class SocialCircleInduction {
 				}
 				
 			}
-		
-			gradientTheta[i] = partial;
+			
+			//The partial differential on omega
+			double[] omega = new double[gradientTheta[i].length];
+			for(int a = 0; a < omega.length; a++)
+				omega[a] = Math.signum(theta[i][a]);
+			
+			gradientTheta[i] = vectorSum(partial, vectorScalarMultiple(omega, -1.0));
 			
 		}
 		
