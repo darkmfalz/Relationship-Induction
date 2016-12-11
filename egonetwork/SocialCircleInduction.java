@@ -93,15 +93,30 @@ public class SocialCircleInduction {
 			//Initialize some variables
 			double precision = 0.1;
 			//Initialize step size with something RIDICULOUS
-			double gamma = 10.0;
+			double gamma = 100.0;
 			//Perform gradient descent
 			while(distanceOnParameters(theta, alpha, thetaPrev, alphaPrev) > precision){
 				
 				//Calculate value of function
+				//TODO add in OMEGA function to f
 				double f = lTheta(egoNetwork, currCircles, theta, alpha);
+				System.out.println(f);
 				//Get partial derivative
+				//TODO add Omega function to gradientTheta
+				double[][] gradientTheta = gradientTheta(egoNetwork, currCircles, theta, alpha);
+				System.out.println("done!");
+				double[] gradientAlpha = gradientAlpha(egoNetwork, currCircles, theta, alpha);
 				//Select gamma
-				double c = 1.0;
+				double c = 0.5;
+				double tau = 0.5;
+				double m = dotProduct(gradientAlpha, gradientAlpha);
+				for(int i = 0; i < gradientTheta.length; i++)
+					m += dotProduct(gradientTheta[i], gradientTheta[i]);
+				//The magnitude of the gradient
+				m = Math.sqrt(m);
+				//TODO add in OMEGA function
+				while((lTheta(egoNetwork, currCircles, vectorSum(theta, vectorScalarMultiple(gradientTheta, gamma/m)), vectorSum(alpha, vectorScalarMultiple(gradientAlpha, gamma/m)))) - f < gamma*c*m)
+					gamma = gamma*tau;
 				break;
 				
 			}
@@ -194,6 +209,97 @@ public class SocialCircleInduction {
 		
 	}
 	
+	public static double[] gradientAlpha(EgoNetwork egoNetwork, Integer[][] circles, double[][] theta, double[] alpha){
+		
+		double[] gradientAlpha = new double[theta.length];
+		int[][] adjMatrix = egoNetwork.getAdjMatrix();
+		
+		for(int i = 0; i < gradientAlpha.length; i++){
+			
+			double partial = 0.0;
+			for(int j = 0; j < adjMatrix.length; j++){
+				
+				for(int k = 0; k < adjMatrix[j].length; k++){
+					
+					boolean containsJ = false;
+					boolean containsK = false;
+					for(int a = 0; a < circles[i].length; a++){
+						
+						containsJ = containsK || (circles[i][a] == j);
+						containsJ = containsK || (circles[i][a] == k);
+						
+					}
+					
+					if(!containsJ || !containsK) {
+						
+						double dotProduct = dotProduct(egoNetwork.getSimilarityVector(j, k), theta[i]);
+						double expBigPhi = Math.exp(bigPhi(egoNetwork, circles, theta, alpha, j, k));
+						
+						partial += dotProduct
+								* expBigPhi
+								/ (1 + expBigPhi);
+						
+						if(adjMatrix[j][k] != 0)
+							partial -= dotProduct;
+						
+					}
+					
+				}
+				
+			}
+			
+			gradientAlpha[i] = partial;
+			
+		}
+		
+		return gradientAlpha;
+		
+	}
+	
+	public static double[][] gradientTheta(EgoNetwork egoNetwork, Integer[][] circles, double[][] theta, double[] alpha){
+		
+		double[][] gradientTheta = new double[theta.length][theta[0].length];
+		int[][] adjMatrix = egoNetwork.getAdjMatrix();
+		
+		for(int i = 0; i < gradientTheta.length; i++){
+				
+			double[] partial = new double[gradientTheta[i].length];
+			
+			for(int j = 0; j < adjMatrix.length; j++){
+				
+				for(int k = 0; k < adjMatrix[j].length; k++){
+					
+					for(int a = 0; a < gradientTheta[i].length; a++){
+						
+						double component = egoNetwork.getSimilarityVector(j, k)[a];
+						double expBigPhi = Math.exp(bigPhi(egoNetwork, circles, theta, alpha, j, k));
+						
+						partial[a] += -1.0 * dK(i, circles[i], theta, alpha, j, k)
+								* component
+								* expBigPhi
+								/ (1 + expBigPhi);
+						
+						if(adjMatrix[j][k] != 0){
+							
+							partial[a] += dK(i, circles[i], theta, alpha, j, k)
+									* component;
+							
+						}
+						
+					}
+					
+				}
+				
+			}
+		
+			gradientTheta[i] = partial;
+			
+		}
+		
+		return gradientTheta;
+		
+	}
+	
 	public static double bigPhi(EgoNetwork egoNetwork, Integer[][] circles, double[][] theta, double[] alpha, int x, int y){
 		
 		double bigPhi = 0.0;
@@ -258,6 +364,42 @@ public class SocialCircleInduction {
 			return Double.NaN;
 			
 		}
+		
+	}
+	
+	public static double[] vectorSum(double[] vec1, double[] vec2){
+		
+		double[] sum = new double[vec1.length];
+		for(int i = 0; i < vec1.length; i++)
+			sum[i] = vec1[i] + vec2[i];
+		return sum;
+		
+	}
+	
+	public static double[][] vectorSum(double[][] vec1, double[][] vec2){
+		
+		double[][] sum = new double[vec1.length][];
+		for(int i = 0; i < vec1.length; i++)
+			sum[i] = vectorSum(vec1[i], vec2[i]);
+		return sum;
+		
+	}
+	
+	public static double[] vectorScalarMultiple(double[] vec, double scalar){
+		
+		double[] product = new double[vec.length];
+		for(int i = 0; i < vec.length; i++)
+			product[i] = vec[i]*scalar;
+		return product;
+		
+	}
+	
+	public static double[][] vectorScalarMultiple(double[][] vec, double scalar){
+		
+		double[][] product = new double[vec.length][];
+		for(int i = 0; i < vec.length; i++)
+			product[i] = vectorScalarMultiple(vec[i], scalar);
+		return product;
 		
 	}
 	

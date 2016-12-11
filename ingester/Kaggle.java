@@ -73,6 +73,7 @@ public class Kaggle {
 			while((line = bufferedReader.readLine()) != null){
 				
 				String[] lineSep = line.split("\\s+");
+				//If this is the feature set of a non-ego
 				if(indices.keySet().contains(lineSep[0])){
 					
 					ArrayList<String> features = new ArrayList<String>();
@@ -81,6 +82,7 @@ public class Kaggle {
 					featureList.put(lineSep[0], features);
 					
 				}
+				//If this is the feature list of the ego
 				else if(Integer.toString(currIndex).equals(lineSep[0])){
 					
 					for(int i = 1; i < lineSep.length; i++)
@@ -92,7 +94,8 @@ public class Kaggle {
 			
 			bufferedReader.close();
 			fileReader.close();
-			egoNetwork.addFeatures(egoFeatures, featureList, new McAuleySimilarity(2,egoFeatures,featureList));
+			//TODO understand why McAuley similarity doesn't work
+			egoNetwork.addFeatures(egoFeatures, featureList, new McAuleySimilarity(1, egoFeatures, featureList));
 			
 			return egoNetwork;
 			

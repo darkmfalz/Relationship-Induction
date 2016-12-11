@@ -21,7 +21,7 @@ public class McAuleySimilarity implements ProfileSimilarity {
 		int actualDepth = 0;
 		for(int i = 0; i < egoFeatures.size(); i++){
 			
-			actualDepth = Math.max(actualDepth, egoFeatures.get(i).length());
+			actualDepth = Math.max(actualDepth, egoFeatures.get(i).split(" ").length);
 			validFeatures.add(egoFeatures.get(i));
 			
 		}
@@ -32,7 +32,7 @@ public class McAuleySimilarity implements ProfileSimilarity {
 			ArrayList<String> next = featureIterator.next();
 			for(int i = 0; i < next.size(); i++){
 				
-				actualDepth = Math.max(actualDepth, next.get(i).length());
+				actualDepth = Math.max(actualDepth, next.get(i).split(" ").length);
 				validFeatures.add(next.get(i));
 				
 			}
@@ -48,7 +48,7 @@ public class McAuleySimilarity implements ProfileSimilarity {
 			while(iterator.hasNext()){
 				
 				String curr = iterator.next();
-				if(curr.split("\\s+").length == i)
+				if(curr.split(" ").length == i)
 					offendingBranches.add(curr);
 				
 			}
@@ -60,16 +60,32 @@ public class McAuleySimilarity implements ProfileSimilarity {
 				String next = iterator.next();
 				String prefix = "";
 				String[] split = next.split("\\s+");
-				for(int k = 0; k < split.length - 1; k++)
-					prefix = prefix + split[k];
 				
+				for(int k = 0; k < split.length - (i - maxDepth); k++){
+					if(k == 0)
+						prefix = prefix + split[k];
+					else
+						prefix = prefix + " " + split[k];
+				}
+				String[] prefixSplit = prefix.split(" ");
 				validFeatures.remove(next);
 				iterator.remove();
 				
 				while(iterator.hasNext()){
 					
 					next = iterator.next();
-					if(next.contains(prefix)){
+					String[] nextSplit = next.split(" ");
+					
+					//Test if this contains the prefix
+					boolean containsPrefix = true;
+					if(nextSplit.length == prefixSplit.length){
+						for(int a = 0; a < prefixSplit.length; a++)
+							containsPrefix = containsPrefix || nextSplit[a].equals(prefixSplit[a]);
+					}
+					else
+						containsPrefix = false;
+					
+					if(containsPrefix){
 						
 						validFeatures.remove(next);
 						iterator.remove();
@@ -106,9 +122,12 @@ public class McAuleySimilarity implements ProfileSimilarity {
 			boolean didMatch = false;
 			for(int j = 0; j < profile2.size(); j++){
 				
+				//Only need to compare once
 				if(i == 0)
-					actualDepth = Math.max(actualDepth, profile1.get(i).split("\\s+").length);
+					actualDepth = Math.max(actualDepth, profile2.get(j).split("\\s+").length);
 				
+				//If we get a match over profile2 on feature i of profile1
+				//We put the match in the vector, and break the loop on profile2, so we can examine the next feature
 				if(profile1.get(i).equals(profile2.get(j))){
 					simVec.put(profile1.get(i), true);
 					didMatch = true;
@@ -116,6 +135,7 @@ public class McAuleySimilarity implements ProfileSimilarity {
 				}
 				
 			}
+			//If it never matched, just put that characteristic as false
 			if(!didMatch)
 				simVec.put(profile1.get(i), false);
 			
@@ -145,9 +165,14 @@ public class McAuleySimilarity implements ProfileSimilarity {
 					String next = iterator.next();
 					String prefix = "";
 					String[] split = next.split("\\s+");
-					for(int k = 0; k < split.length - 1; k++)
-						prefix = prefix + split[k];
-					
+					for(int k = 0; k < split.length - (i - maxDepth); k++){
+						if(k == 0)
+							prefix = prefix + split[k];
+						else
+							prefix = prefix + " " + split[k];
+					}
+					String[] prefixSplit = prefix.split(" ");
+					//Is the considered branch similar or not?
 					boolean isSimilar = false;
 					isSimilar = isSimilar || simVec.get(next);
 					simVec.remove(next);
@@ -156,7 +181,18 @@ public class McAuleySimilarity implements ProfileSimilarity {
 					while(iterator.hasNext()){
 						
 						next = iterator.next();
-						if(next.contains(prefix)){
+						String[] nextSplit = next.split(" ");
+						
+						//Test if this contains the prefix
+						boolean containsPrefix = true;
+						if(nextSplit.length == prefixSplit.length){
+							for(int a = 0; a < prefixSplit.length; a++)
+								containsPrefix = containsPrefix || nextSplit[a].equals(prefixSplit[a]);
+						}
+						else
+							containsPrefix = false;
+						
+						if(containsPrefix){
 							
 							isSimilar = isSimilar || simVec.get(next);
 							simVec.remove(next);
@@ -176,7 +212,6 @@ public class McAuleySimilarity implements ProfileSimilarity {
 		
 		double sim[] = new double[indices.size()];
 		Iterator<String> iterator = simVec.keySet().iterator();
-		
 		while(iterator.hasNext()){
 			
 			String next = iterator.next();
