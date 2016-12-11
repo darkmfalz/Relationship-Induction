@@ -47,6 +47,8 @@ public class EgoNetwork {
 	
 	public void addFeatures(ArrayList<String> egoFeatures, HashMap<String, ArrayList<String>> featureList, ProfileSimilarity sim){
 		
+		//This entire method is meant to convert features into a similarity matrix on the egoNetwork
+		
 		//Reproduce HashMap between strings and indices
 		HashMap<String, Integer> indices = reverseIndices();
 		
@@ -78,6 +80,12 @@ public class EgoNetwork {
 					
 		}
 		simMatrix[egoIndex][egoIndex] = sim.similarity(egoFeatures, egoFeatures);
+		
+	}
+	
+	public double[] getSimilarityVector(int from, int to){
+		
+		return simMatrix[from][to];
 		
 	}
 	
@@ -120,6 +128,12 @@ public class EgoNetwork {
 	public String getEgo(){
 		
 		return ego;
+		
+	}
+	
+	public int[][] getAdjMatrix(){
+		
+		return adjMatrix;
 		
 	}
 	
