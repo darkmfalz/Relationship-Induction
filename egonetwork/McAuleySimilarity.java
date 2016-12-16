@@ -1,6 +1,7 @@
 package egonetwork;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -202,7 +203,7 @@ public class McAuleySimilarity implements ProfileSimilarity {
 			sim[indices.get(next)] = simVec.get(next);
 			
 		}
-		
+		System.out.println(Arrays.toString(sim));
 		return sim;
 		
 	}

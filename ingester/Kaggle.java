@@ -99,7 +99,7 @@ public class Kaggle {
 			bufferedReader.close();
 			fileReader.close();*/
 			
-			ChineseWhispersSimilarity chineseWhispers = new ChineseWhispersSimilarity();
+			ChineseWhispersSimilarity chineseWhispers = new ChineseWhispersSimilarity(egoNetwork);
 			TreeSet<String> egoFeatures = new TreeSet<String>();
 			for(int i = 0; i < egoNetwork.numVertices(); i++)
 				egoFeatures.add(i + " " + 1);

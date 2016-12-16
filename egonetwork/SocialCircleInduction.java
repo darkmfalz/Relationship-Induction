@@ -1,6 +1,8 @@
 package egonetwork;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.TreeSet;
 
@@ -8,14 +10,191 @@ public class SocialCircleInduction {
 	
 	public static String[][] McAuleyInduction(EgoNetwork egoNetwork){
 		
-		//TODO int numCircles = [INSERT ESTIMATION METHOD HERE];
-		//Read: https://www.cs.princeton.edu/courses/archive/fall11/cos597C/lectures/mixed-membership.pdf
-		//Read: http://jmlr.csail.mit.edu/papers/volume9/airoldi08a/airoldi08a.pdf
-		//Read: Fuzzy membership
-		int numCircles = 10;
+		int numCircles = 0;
+		double bicMin = Double.POSITIVE_INFINITY;
+		Random random = new Random();
+		//Too inconsistent
+		for(int a = 2; a < egoNetwork.numVertices(); a++){
+			
+			//We need to have some good initialization on the parameters
+			//So, let's just call t_k the inner product of the profile and theta
+			//We want to select t_k
+			//Let's build clusters in a k-means way
+			//The method is detailed here: http://stats.stackexchange.com/questions/30723/initializing-k-means-clustering
+			TreeSet<Integer> initialCenters = new TreeSet<Integer>();
+			while(initialCenters.size() < a)
+				initialCenters.add(random.nextInt(egoNetwork.numVertices()));
+			for(int i = 0; i < egoNetwork.numVertices(); i++){                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+				
+				if(!initialCenters.contains(i)){
+					
+					Iterator<Integer> iterator = initialCenters.iterator();
+					int[] indices = new int[a];
+					//Distances from vertex i
+					double[] distances = new double[a];
+					//The index of one of the two centers closest to each other that is closest to vertex i
+					int minDistanceClosest = Integer.MAX_VALUE;
+					//The minimum distance between centers
+					double minDistance = Double.POSITIVE_INFINITY;
+					//The center closest to vertex i
+					int closestCenter = -1;
+					//The distance to this center
+					double closestCenterDistance = Double.POSITIVE_INFINITY;
+					int index = 0;
+					while(iterator.hasNext()){
+						
+						int next = iterator.next();
+						indices[index] = next;
+						//Check if this center is the closest one
+						distances[index] = dotProduct(egoNetwork.getSimilarityVector(i, next), egoNetwork.getSimilarityVector(i, next));
+						if(distances[index] < closestCenterDistance){
+							
+							closestCenter = next;
+							closestCenterDistance = distances[index];
+							
+						}
+						
+						//Extract the closest two centers
+						Iterator<Integer> iterator2 = initialCenters.iterator();
+						while(iterator2.hasNext()){
+							
+							int next2 = iterator2.next();
+							double distance = dotProduct(egoNetwork.getSimilarityVector(next2, next), egoNetwork.getSimilarityVector(next2, next));
+							if(next != next2 && distance < minDistance){
+								
+								minDistance = distance;
+								//Select the closer of the two centers
+								if(dotProduct(egoNetwork.getSimilarityVector(i, next), egoNetwork.getSimilarityVector(i, next))
+										< dotProduct(egoNetwork.getSimilarityVector(i, next2), egoNetwork.getSimilarityVector(i, next2)))
+									minDistanceClosest = next;
+								else
+									minDistanceClosest = next2;
+								
+							}
+							
+						}
+						index++;
+						
+					}
+					
+					//Update the closest center distance, if possible
+					if(closestCenterDistance > minDistance){
+						
+						initialCenters.remove(minDistanceClosest);
+						initialCenters.add(i);
+						
+					}
+					else{
+						
+						double secondDistance = Double.POSITIVE_INFINITY;
+						iterator = initialCenters.iterator();
+						while(iterator.hasNext()){
+							
+							int next = iterator.next();
+							if(next != closestCenter){
+								int index1 = 0;
+								for(int b = 0; b < indices.length; b++){
+									
+									if(indices[b] == next)
+										index1 = b;
+									
+								}
+								if(distances[index1] < secondDistance)
+									secondDistance = distances[index1];
+								
+							}
+							
+						}
+						
+						//Extract distances on the closest center
+						iterator = initialCenters.iterator();
+						double closestCenterMinDistance = Double.POSITIVE_INFINITY;
+						while(iterator.hasNext()){
+							
+							int next = iterator.next();
+							double distance = dotProduct(egoNetwork.getSimilarityVector(closestCenter, next), egoNetwork.getSimilarityVector(closestCenter, next));
+							closestCenterMinDistance = Math.min(distance, closestCenterMinDistance);
+							
+						}
+						
+						if(secondDistance > minDistance + closestCenterMinDistance){
+							
+							initialCenters.remove(closestCenter);
+							initialCenters.add(i);
+							
+						}
+						
+					}
+					
+				}
+				
+			}
+			//Expand the centers into clusters
+			//OR use the centers as theta?
+			Integer[][] currCircles = new Integer[a][];
+			HashMap<Integer, TreeSet<Integer>> tempCircles = new HashMap<Integer, TreeSet<Integer>>();
+			TreeSet<Integer> assigned = new TreeSet<Integer>();
+			
+			while(assigned.size() < egoNetwork.numVertices()){
+				
+				Iterator<Integer> iterator = initialCenters.iterator();
+				while(iterator.hasNext()){
+					
+					int next = iterator.next();
+					if(!tempCircles.containsKey(next)){
+						TreeSet<Integer> branch = new TreeSet<Integer>();
+						branch.add(next);
+						tempCircles.put(next, branch);
+					}
+					int index = -1;
+					double distance = Double.POSITIVE_INFINITY;
+					for(int i = 0; i < egoNetwork.numVertices(); i++){
+						
+						if(!tempCircles.get(next).contains(i) && distance > dotProduct(egoNetwork.getSimilarityVector(next, i), egoNetwork.getSimilarityVector(next, i))){
+							
+							index = i;
+							distance = dotProduct(egoNetwork.getSimilarityVector(next, i), egoNetwork.getSimilarityVector(next, i));
+							
+						}
+						
+					}
+					tempCircles.get(next).add(index);
+					assigned.add(index);
+					
+				}
+				
+			}
+			
+			Iterator<Integer> iterator = initialCenters.iterator();
+			int index = 0;
+			double[][] theta = new double[a][];
+			
+			while(iterator.hasNext()){
+				int next = iterator.next();
+				currCircles[index] = tempCircles.get(next).toArray(new Integer[0]);
+				theta[index] = egoNetwork.getSimilarityVector(next, egoNetwork.numVertices());
+				index++;
+			}
+			
+			double[] alpha = new double[a];
+			for(int i = 0; i < alpha.length; i++)
+				alpha[i] = 1.0;
+			
+			double bic = -2.0*lTheta(egoNetwork, currCircles, theta, alpha) + a*Math.log(egoNetwork.numEdges());
+			
+			if(bic < bicMin){
+				
+				bicMin = bic;
+				numCircles = a;
+				
+			}
+			
+		}
 		System.out.println(numCircles);
 		
+		numCircles = 10;
 		return McAuleyInduction(egoNetwork, numCircles);
+		//return null;
 		
 	}
 	
@@ -74,7 +253,7 @@ public class SocialCircleInduction {
 		//That is, there is no modulation between the effect of superset circles and non-superset circles
 		double[] alpha = new double[numCircles];
 		for(int i = 0; i < alpha.length; i++)
-			alpha[i] = -1.0;
+			alpha[i] = 1.0;
 		
 		double[] alphaPrev = new double[numCircles];
 		for(int i = 0; i < alphaPrev.length; i++)
