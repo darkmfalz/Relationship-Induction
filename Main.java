@@ -1,11 +1,12 @@
-import egonetwork.SocialCircleInduction;
+import java.io.IOException;
+
 import ingester.Kaggle;
 
 public class Main {
 
-	public static void main(String[] args){
+	public static void main(String[] args) throws NumberFormatException, IOException{
 		
-		SocialCircleInduction.McAuleyInduction(Kaggle.createTestableEgoNetwork());
+		Kaggle.testAll();
 		
 	}
 	
