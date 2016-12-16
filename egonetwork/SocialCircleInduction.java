@@ -66,33 +66,34 @@ public class SocialCircleInduction {
 			
 		}
 		
+		double[][] theta = new double[numCircles][egoNetwork.getSimilarityVector(0, 1).length];
+		//Initialize theta_k to the 1-vector
+		//Also note: theta encodes the feature similarity parameters of a circle
+		Random random = new Random();
+		for(int i = 0; i < theta.length; i++)
+			for(int j = 0; j < theta[i].length; j++)
+				theta[i][j] = -0.5*random.nextDouble();
+		
+		double[][] thetaPrev = new double[numCircles][egoNetwork.getSimilarityVector(0, 1).length];
+		for(int i = 0; i < thetaPrev.length; i++)
+			for(int j = 0; j < thetaPrev[i].length; j++)
+				thetaPrev[i][j] = 0.0;
+		
+		//Initialize alpha_k to 1
+		//That is, there is no modulation between the effect of superset circles and non-superset circles
+		double[] alpha = new double[numCircles];
+		for(int i = 0; i < alpha.length; i++)
+			alpha[i] = -1.0;
+		
+		double[] alphaPrev = new double[numCircles];
+		for(int i = 0; i < alphaPrev.length; i++)
+			alphaPrev[i] = 0.0;
+		
 		//Optimization loop
 		while(!circlesAreEqual(prevCircles, currCircles)){
 			
 			//Optimize Theta -- this is the pairs of theta vectors and alpha scalars
 			//Here we use gradient descent
-			double[][] theta = new double[numCircles][egoNetwork.getSimilarityVector(0, 1).length];
-			//Initialize theta_k to the 1-vector
-			//Also note: theta encodes the feature similarity parameters of a circle
-			Random random = new Random();
-			for(int i = 0; i < theta.length; i++)
-				for(int j = 0; j < theta[i].length; j++)
-					theta[i][j] = -0.5*random.nextDouble();
-			
-			double[][] thetaPrev = new double[numCircles][egoNetwork.getSimilarityVector(0, 1).length];
-			for(int i = 0; i < thetaPrev.length; i++)
-				for(int j = 0; j < thetaPrev[i].length; j++)
-					thetaPrev[i][j] = 0.0;
-			
-			//Initialize alpha_k to 1
-			//That is, there is no modulation between the effect of superset circles and non-superset circles
-			double[] alpha = new double[numCircles];
-			for(int i = 0; i < alpha.length; i++)
-				alpha[i] = -1.0;
-			
-			double[] alphaPrev = new double[numCircles];
-			for(int i = 0; i < alphaPrev.length; i++)
-				alphaPrev[i] = 0.0;
 			
 			//Initialize some variables
 			double precision = 0.1;
@@ -129,102 +130,174 @@ public class SocialCircleInduction {
 			//CLAIM: each circle is independent of each other and dependent only on the optimal theta
 			//CLAIM: we can use Lloyd's algorithm to optimize a single cluster
 			prevCircles = currCircles;
-			for(int k = 0; k < currCircles.length; k++){
-				//System.out.println(Arrays.toString(theta[k]));
-				//Optimize each circle
-				//Don't forget to order vertices
-				//Initialize this circle -- how?
-				//We want a pretty solid cluster with high edge weight -- two that most match the similarity?
-				//They should also have an edge
-				TreeSet<Integer> circle = new TreeSet<Integer>();
-				double[][] dotProducts = new double[egoNetwork.numVertices()][egoNetwork.numVertices()];
-				int v1 = -1;
-				int v2 = -1;
-				double maxDot = Double.NEGATIVE_INFINITY;
-				for(int i = 0; i < egoNetwork.numVertices(); i++){
+			Integer[][] circles = prevCircles;
+			currCircles = new Integer[numCircles][];
+			for(int n = 0; n < 30; n++){
+			
+				for(int k = 0; k < currCircles.length; k++){
 					
-					for(int j = 0; j < egoNetwork.numVertices(); j++){
-						
-						double dotProduct = dotProduct(egoNetwork.getSimilarityVector(i, j), theta[k]);
-						dotProducts[i][j] =  dotProduct;
-						//Consider all connected edges who match the profile similarity the most
-						if(egoNetwork.getEdge(i, j)){
-							
-							if(dotProduct > maxDot){
-								
-								v1 = i;
-								v2 = j;
-								maxDot = dotProduct;
-								
-							}
-							
-						}
-						
-					}
-					
-				}
-				circle.add(v1);
-				circle.add(v2);
-				
-				//Make 30 rounds of reassignment -- just heuristic
-				for(int c = 0; c < 30; c++){
-					
-					//System.out.println(Arrays.toString(theta[k]) + " " + circle.toString());
-					
-					TreeSet<Integer> newCircle = new TreeSet<Integer>();
-					//Reassign variables
+					TreeSet<Integer> circle = new TreeSet<Integer>(Arrays.asList(prevCircles[k]));
+					double[][] dotProducts = new double[egoNetwork.numVertices()][egoNetwork.numVertices()];
 					for(int i = 0; i < egoNetwork.numVertices(); i++){
 						
-						double delta = 0.0;
-						
-						if(circle.contains(i)){
+						for(int j = 0; j < egoNetwork.numVertices(); j++){
 							
-							for(int j = 0; j < egoNetwork.numVertices(); j++){
-								
-								if(circle.contains(j)){
-									
-									if(egoNetwork.getEdge(i, j))
-										delta -= (1+alpha[k])*dotProducts[i][j];
-									
-									delta -= Math.log((1+Math.exp(-1.0*alpha[k]*dotProducts[i][j]))/(1+Math.exp(dotProducts[i][j])));
-									
-								}
-								
-							}
+							double dotProduct = dotProduct(egoNetwork.getSimilarityVector(i, j), theta[k]);
+							dotProducts[i][j] =  dotProduct;
 							
 						}
-						else{
-							
-							for(int j = 0; j < egoNetwork.numVertices(); j++){
-								
-								if(circle.contains(j)){
-									
-									if(egoNetwork.getEdge(i, j))
-										delta += (1+alpha[k])*dotProducts[i][j];
-									
-									delta += Math.log((1+Math.exp(-1.0*alpha[k]*dotProducts[i][j]))/(1+Math.exp(dotProducts[i][j])));
-									
-								}
-								
-							}
-							
-						}
-						
-						if(delta > 0.0)
-							newCircle.add(i);
 						
 					}
 					
-					if(circle.equals(newCircle))
-						break;
+					//Make 30 rounds of reassignment -- just heuristic
+					for(int c = 0; c < 30; c++){
+						
+						//System.out.println(Arrays.toString(theta[k]) + " " + circle.toString());
+						
+						TreeSet<Integer> newCircle = new TreeSet<Integer>();
+						//Reassign variables
+						for(int i = 0; i < egoNetwork.numVertices(); i++){
+							
+							double delta = 0.0;
+							
+							if(circle.contains(i)){
+								
+								for(int j = 0; j < egoNetwork.numVertices(); j++){
+									
+									if(circle.contains(j)){
+										
+										double constant = 0.0;
+										for(int a = 0; a < circles.length; a++){
+											
+											if(a != k){
+												
+												//test if both i and j are in this circle
+												boolean inCircleI = false;
+												boolean inCircleJ = false;
+												for(int b = 0; b < circles[a].length; b++){
+													
+													if(circles[a][b] == i)
+														inCircleI = true;
+													if(circles[a][b] == j)
+														inCircleJ = true;
+													
+												}
+												if(inCircleI && inCircleJ)
+													constant += dotProduct(egoNetwork.getSimilarityVector(i, j), theta[a]);
+												else
+													constant += alpha[a]*dotProduct(egoNetwork.getSimilarityVector(i, j), theta[a]);
+												
+											}
+											
+										}
+										
+										if(egoNetwork.getEdge(i, j))
+											delta -= (1+alpha[k])*dotProducts[i][j];
+										
+										delta -= Math.log((1+Math.exp(constant - alpha[k]*dotProducts[i][j]))/(1+Math.exp(constant + dotProducts[i][j])));
+										
+									}
+									
+								}
+								
+								//If it's more prudent to remove the vertex...
+								if(delta > 0.0)
+									newCircle.remove(i);
+								
+							}
+							else{
+								
+								for(int j = 0; j < egoNetwork.numVertices(); j++){
+									
+									if(circle.contains(j)){
+									
+										double constant = 0.0;
+										for(int a = 0; a < circles.length; a++){
+											
+											if(a != k){
+												
+												//test if both i and j are in this circle
+												boolean inCircleI = false;
+												boolean inCircleJ = false;
+												for(int b = 0; b < circles[a].length; b++){
+													
+													if(circles[a][b] == i)
+														inCircleI = true;
+													if(circles[a][b] == j)
+														inCircleJ = true;
+													
+												}
+												if(inCircleI && inCircleJ)
+													constant += dotProduct(egoNetwork.getSimilarityVector(i, j), theta[a]);
+												else
+													constant += alpha[a]*dotProduct(egoNetwork.getSimilarityVector(i, j), theta[a]);
+												
+											}
+											
+										}
+										
+										if(egoNetwork.getEdge(i, j))
+											delta += (1+alpha[k])*dotProducts[i][j];
+										
+										delta += Math.log((1+Math.exp(constant - alpha[k]*dotProducts[i][j]))/(1+Math.exp(constant + dotProducts[i][j])));
+										
+									}
+									
+								}
+								
+								//If the vertex is outside and it's more prudent to add it back in
+								if(delta > 0.0)
+									newCircle.add(i);
+								
+							}
+							
+						}
+						
+						if(circle.equals(newCircle))
+							break;
+						
+						circle = newCircle;
+						
+					}
+				
+					System.out.println(k + ": " + circle.toString() + " " + n + "-th pass");
+					currCircles[k] = circle.toArray(new Integer[0]);
+					circles[k] = currCircles[k];
+				
+				}
+				
+			}
+			
+			//System.out.println(Error.function2(prevCircles, currCircles, new HashMap<Integer, Integer>(), new HashSet<Integer>(), egoNetwork.numVertices())[1]/((double) numCircles));
+			//BER
+			double[] val = new double[2];
+			for(int i = 0; i < currCircles.length; i++){
+				
+				double numMatches = 0.0;
+				for(int j = 0; j < currCircles[i].length; j++){
 					
-					circle = newCircle;
+					boolean match = false;
+					for(int k = 0; k < prevCircles[i].length; k++){
+						
+						if(currCircles[i][j] == prevCircles[i][k]){
+							
+							match = true;
+							break;
+							
+						}
+						
+					}
+					if(match)
+						numMatches++;
 					
 				}
-			
-				System.out.println(k + " " + circle.toString());	
-			
+				val[0] += 0.5*(((double)currCircles[i].length)-numMatches)/((double)currCircles[i].length)
+						+ (((double)prevCircles[i].length)-numMatches)/(((double) egoNetwork.numVertices()) - (double)currCircles[i].length);
+				val[1] += 1.0 - 0.5*((((double)currCircles[i].length)-numMatches)/((double)currCircles[i].length)
+						+ (((double)prevCircles[i].length)-numMatches)/(((double) egoNetwork.numVertices()) - (double)currCircles[i].length));
+				
 			}
+			System.out.println(val[0]/((double) numCircles));
 			
 		}
 		
