@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TreeSet;
 
 import egonetwork.EgoNetwork;
 import egonetwork.McAuleySimilarity;
@@ -67,8 +68,8 @@ public class Kaggle {
 			//Add all the features
 			fileReader = new FileReader("features.txt");
 			bufferedReader = new BufferedReader(fileReader);
-			ArrayList<String> egoFeatures = new ArrayList<String>();
-			HashMap<String, ArrayList<String>> featureList = new HashMap<String, ArrayList<String>>();
+			TreeSet<String> egoFeatures = new TreeSet<String>();
+			HashMap<String, TreeSet<String>> featureList = new HashMap<String, TreeSet<String>>();
 			
 			while((line = bufferedReader.readLine()) != null){
 				
@@ -76,7 +77,7 @@ public class Kaggle {
 				//If this is the feature set of a non-ego
 				if(indices.keySet().contains(lineSep[0])){
 					
-					ArrayList<String> features = new ArrayList<String>();
+					TreeSet<String> features = new TreeSet<String>();
 					for(int i = 1; i < lineSep.length; i++)
 						features.add(lineSep[i].replace(";", " "));
 					featureList.put(lineSep[0], features);

@@ -1,10 +1,10 @@
 package egonetwork;
 
-import java.util.ArrayList;
+import java.util.TreeSet;
 
 public interface ProfileSimilarity {
 
 	//returns similarity on two users
-	public double[] similarity(ArrayList<String> profile1, ArrayList<String> profile2);
+	public double[] similarity(TreeSet<String> profile1, TreeSet<String> profile2);
 	
 }

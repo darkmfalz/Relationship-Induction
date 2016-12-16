@@ -1,5 +1,9 @@
 package egonetwork;
 
+import java.util.Arrays;
+import java.util.Random;
+import java.util.TreeSet;
+
 public class SocialCircleInduction {
 	
 	public static String[][] McAuleyInduction(EgoNetwork egoNetwork){
@@ -28,6 +32,7 @@ public class SocialCircleInduction {
 			prevCircles[i][0] = 0;
 		Integer[][] currCircles = new Integer[numCircles][];
 		//Just assign every vertex to a circle once
+		//TODO fix the problems in this assignment -- it's functionally random, so all of them are very close
 		double verticesPerCircle = ((double) egoNetwork.numVertices())/((double) numCircles);
 		int currIndex = 0;
 		for(int i = 0; i < currCircles.length; i++){
@@ -69,9 +74,10 @@ public class SocialCircleInduction {
 			double[][] theta = new double[numCircles][egoNetwork.getSimilarityVector(0, 1).length];
 			//Initialize theta_k to the 1-vector
 			//Also note: theta encodes the feature similarity parameters of a circle
+			Random random = new Random();
 			for(int i = 0; i < theta.length; i++)
 				for(int j = 0; j < theta[i].length; j++)
-					theta[i][j] = 1.0;
+					theta[i][j] = -0.5*random.nextDouble();
 			
 			double[][] thetaPrev = new double[numCircles][egoNetwork.getSimilarityVector(0, 1).length];
 			for(int i = 0; i < thetaPrev.length; i++)
@@ -82,7 +88,7 @@ public class SocialCircleInduction {
 			//That is, there is no modulation between the effect of superset circles and non-superset circles
 			double[] alpha = new double[numCircles];
 			for(int i = 0; i < alpha.length; i++)
-				alpha[i] = 1.0;
+				alpha[i] = -1.0;
 			
 			double[] alphaPrev = new double[numCircles];
 			for(int i = 0; i < alphaPrev.length; i++)
@@ -109,7 +115,6 @@ public class SocialCircleInduction {
 					m += dotProduct(gradientTheta[i], gradientTheta[i]);
 				//The magnitude of the gradient
 				m = Math.sqrt(m);
-				//TODO add in OMEGA function
 				while((lTheta(egoNetwork, currCircles, vectorSum(theta, vectorScalarMultiple(gradientTheta, gamma/m)), vectorSum(alpha, vectorScalarMultiple(gradientAlpha, gamma/m))) - omega(vectorSum(theta, vectorScalarMultiple(gradientTheta, gamma/m)))) - f < gamma*c*m)
 					gamma = gamma*tau;
 				thetaPrev = theta;
@@ -120,13 +125,121 @@ public class SocialCircleInduction {
 			}
 			System.out.println(lTheta(egoNetwork, currCircles, theta, alpha) - omega(theta));
 			
-			//Optimize Circles
-			break;
+			//TODO Optimize Circles
+			//CLAIM: each circle is independent of each other and dependent only on the optimal theta
+			//CLAIM: we can use Lloyd's algorithm to optimize a single cluster
+			prevCircles = currCircles;
+			for(int k = 0; k < currCircles.length; k++){
+				//System.out.println(Arrays.toString(theta[k]));
+				//Optimize each circle
+				//Don't forget to order vertices
+				//Initialize this circle -- how?
+				//We want a pretty solid cluster with high edge weight -- two that most match the similarity?
+				//They should also have an edge
+				TreeSet<Integer> circle = new TreeSet<Integer>();
+				double[][] dotProducts = new double[egoNetwork.numVertices()][egoNetwork.numVertices()];
+				int v1 = -1;
+				int v2 = -1;
+				double maxDot = Double.NEGATIVE_INFINITY;
+				for(int i = 0; i < egoNetwork.numVertices(); i++){
+					
+					for(int j = 0; j < egoNetwork.numVertices(); j++){
+						
+						double dotProduct = dotProduct(egoNetwork.getSimilarityVector(i, j), theta[k]);
+						dotProducts[i][j] =  dotProduct;
+						//Consider all connected edges who match the profile similarity the most
+						if(egoNetwork.getEdge(i, j)){
+							
+							if(dotProduct > maxDot){
+								
+								v1 = i;
+								v2 = j;
+								maxDot = dotProduct;
+								
+							}
+							
+						}
+						
+					}
+					
+				}
+				circle.add(v1);
+				circle.add(v2);
+				
+				//Make 30 rounds of reassignment -- just heuristic
+				for(int c = 0; c < 30; c++){
+					
+					//System.out.println(Arrays.toString(theta[k]) + " " + circle.toString());
+					
+					TreeSet<Integer> newCircle = new TreeSet<Integer>();
+					//Reassign variables
+					for(int i = 0; i < egoNetwork.numVertices(); i++){
+						
+						double delta = 0.0;
+						
+						if(circle.contains(i)){
+							
+							for(int j = 0; j < egoNetwork.numVertices(); j++){
+								
+								if(circle.contains(j)){
+									
+									if(egoNetwork.getEdge(i, j))
+										delta -= (1+alpha[k])*dotProducts[i][j];
+									
+									delta -= Math.log((1+Math.exp(-1.0*alpha[k]*dotProducts[i][j]))/(1+Math.exp(dotProducts[i][j])));
+									
+								}
+								
+							}
+							
+						}
+						else{
+							
+							for(int j = 0; j < egoNetwork.numVertices(); j++){
+								
+								if(circle.contains(j)){
+									
+									if(egoNetwork.getEdge(i, j))
+										delta += (1+alpha[k])*dotProducts[i][j];
+									
+									delta += Math.log((1+Math.exp(-1.0*alpha[k]*dotProducts[i][j]))/(1+Math.exp(dotProducts[i][j])));
+									
+								}
+								
+							}
+							
+						}
+						
+						if(delta > 0.0)
+							newCircle.add(i);
+						
+					}
+					
+					if(circle.equals(newCircle))
+						break;
+					
+					circle = newCircle;
+					
+				}
+			
+				System.out.println(k + " " + circle.toString());	
+			
+			}
 			
 		}
 		
 		//TODO Convert currCircles to circles
 		String[][] circles = new String[numCircles][];
+		
+		for(int i = 0; i < egoNetwork.numVertices(); i++){
+			
+			for(int j = 0; j < egoNetwork.numVertices(); j++){
+				
+				//System.out.println(Arrays.toString(egoNetwork.getSimilarityVector(i, j)));
+				
+			}
+			
+		}
 		
 		return circles;
 		
@@ -192,7 +305,7 @@ public class SocialCircleInduction {
 			for(int j = 0; j < adjMatrix[i].length; j++){
 				
 				//If they're adjacent
-				if(adjMatrix[i][j] != 1){
+				if(adjMatrix[i][j] != 0){
 					
 					lTheta += bigPhi(egoNetwork, circles, theta, alpha, i, j);
 					

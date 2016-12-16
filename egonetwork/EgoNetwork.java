@@ -3,6 +3,7 @@ package egonetwork;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 public class EgoNetwork {
 	
@@ -45,7 +46,7 @@ public class EgoNetwork {
 		
 	}
 	
-	public void addFeatures(ArrayList<String> egoFeatures, HashMap<String, ArrayList<String>> featureList, ProfileSimilarity sim){
+	public void addFeatures(TreeSet<String> egoFeatures, HashMap<String, TreeSet<String>> featureList, ProfileSimilarity sim){
 		
 		//This entire method is meant to convert features into a similarity matrix on the egoNetwork
 		
@@ -134,6 +135,12 @@ public class EgoNetwork {
 	public int[][] getAdjMatrix(){
 		
 		return adjMatrix;
+		
+	}
+	
+	public boolean getEdge(int from, int to){
+		
+		return (adjMatrix[from][to] != 0);
 		
 	}
 	

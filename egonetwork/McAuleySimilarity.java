@@ -1,6 +1,7 @@
 package egonetwork;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -9,36 +10,66 @@ public class McAuleySimilarity implements ProfileSimilarity {
 
 	private int maxDepth;
 	private HashMap<String, Integer> indices;
+	private TreeSet<String> leaves;
+	private HashMap<String, TreeSet<String>> tree;
 	
-	public McAuleySimilarity(int maxDepth, ArrayList<String> egoFeatures, HashMap<String, ArrayList<String>> featureList) {
+	public McAuleySimilarity(int maxDepth, TreeSet<String> egoFeatures, HashMap<String, TreeSet<String>> featureList) {
 	
 		this.maxDepth = maxDepth;
 		indices = new HashMap<String, Integer>();
 		
 		//Get all possible features
 		TreeSet<String> validFeatures = new TreeSet<String>();
+		leaves = new TreeSet<String>();
+		tree = new HashMap<String, TreeSet<String>>();
+		//Add the constant feature
 		validFeatures.add("Adeeb");
+		leaves.add("Adeeb");
+		TreeSet<String> adeeb = new TreeSet<String>();
+		adeeb.add("Adeeb");
+		tree.put("Adeeb", adeeb);
 		int actualDepth = 0;
-		for(int i = 0; i < egoFeatures.size(); i++){
+		//Add the ego
+		Iterator<String> egoIterator = egoFeatures.iterator();
+		while(egoIterator.hasNext()){
 			
-			actualDepth = Math.max(actualDepth, egoFeatures.get(i).split(" ").length);
-			validFeatures.add(egoFeatures.get(i));
-			
-		}
-		
-		Iterator<ArrayList<String>> featureIterator = featureList.values().iterator();
-		while(featureIterator.hasNext()){
-			
-			ArrayList<String> next = featureIterator.next();
-			for(int i = 0; i < next.size(); i++){
+			String next = egoIterator.next();
+			actualDepth = Math.max(actualDepth, next.split(" ").length);
+			validFeatures.add(next);
+			leaves.add(next);
+			if(!tree.containsKey(next)){
 				
-				actualDepth = Math.max(actualDepth, next.get(i).split(" ").length);
-				validFeatures.add(next.get(i));
+				TreeSet<String> branch = new TreeSet<String>();
+				branch.add(next);
+				tree.put(next, branch);
 				
 			}
 			
 		}
 		
+		Iterator<TreeSet<String>> featureIterator = featureList.values().iterator();
+		while(featureIterator.hasNext()){
+			
+			TreeSet<String> next = featureIterator.next();
+			Iterator<String> iterator = next.iterator();
+			while(iterator.hasNext()){
+				
+				String nextString = iterator.next();
+				actualDepth = Math.max(actualDepth, nextString.split(" ").length);
+				validFeatures.add(nextString);
+				leaves.add(nextString);
+				
+				if(!tree.containsKey(nextString)){
+					
+					TreeSet<String> branch = new TreeSet<String>();
+					branch.add(nextString);
+					tree.put(nextString, branch);
+					
+				}
+				
+			}
+			
+		}
 		//Get all VALID features
 		for(int i = actualDepth; i > maxDepth; i--){
 			
@@ -58,9 +89,9 @@ public class McAuleySimilarity implements ProfileSimilarity {
 				
 				iterator = offendingBranches.iterator();
 				String next = iterator.next();
+				//Get the prefix of the string
 				String prefix = "";
 				String[] split = next.split("\\s+");
-				
 				for(int k = 0; k < split.length - (i - maxDepth); k++){
 					if(k == 0)
 						prefix = prefix + split[k];
@@ -68,7 +99,11 @@ public class McAuleySimilarity implements ProfileSimilarity {
 						prefix = prefix + " " + split[k];
 				}
 				String[] prefixSplit = prefix.split(" ");
+				//Remove the current branch
 				validFeatures.remove(next);
+				TreeSet<String> branch = new TreeSet<String>();
+				branch.addAll(tree.get(next));
+				tree.remove(next);
 				iterator.remove();
 				
 				while(iterator.hasNext()){
@@ -88,6 +123,8 @@ public class McAuleySimilarity implements ProfileSimilarity {
 					if(containsPrefix){
 						
 						validFeatures.remove(next);
+						branch.addAll(tree.get(next));
+						tree.remove(next);
 						iterator.remove();
 						
 					}
@@ -95,13 +132,17 @@ public class McAuleySimilarity implements ProfileSimilarity {
 				}
 				
 				validFeatures.add(prefix);
+				if(!tree.containsKey(prefix))
+					tree.put(prefix, branch);
+				else
+					tree.get(prefix).addAll(branch);
 				
 			}
 			
 		}
 		
 		//Assign all indices
-		Iterator<String> iterator = validFeatures.iterator();
+		Iterator<String> iterator = tree.keySet().iterator();
 		int i = 0;
 		while(iterator.hasNext())
 			indices.put(iterator.next(), i++);
@@ -109,120 +150,67 @@ public class McAuleySimilarity implements ProfileSimilarity {
 	}
 
 	@Override
-	public double[] similarity(ArrayList<String> profile1, ArrayList<String> profile2) {
+	public double[] similarity(TreeSet<String> profile1, TreeSet<String> profile2) {
 		
-		HashMap<String, Boolean> simVec = new HashMap<String, Boolean>();
+		//REDO SIMILARITY
+		
 		int actualDepth = 0;
-		//See which leaves match and which don't
-		for(int i = 0; i < profile1.size(); i++){
+		//Get the max depth
+		Iterator<String> featureIterator = profile1.iterator();
+		while(featureIterator.hasNext())
+			actualDepth = Math.max(actualDepth, featureIterator.next().split("\\s+").length);
+		featureIterator = profile2.iterator();
+		while(featureIterator.hasNext())
+			actualDepth = Math.max(actualDepth, featureIterator.next().split("\\s+").length);
+		
+		//Construct the leaf vector
+		HashMap<String, Double> simVec = new HashMap<String, Double>();
+		featureIterator = leaves.iterator();
+		while(featureIterator.hasNext()){
 			
-			//Track the full depth of the trees being compared
-			actualDepth = Math.max(actualDepth, profile1.get(i).split("\\s+").length);
-			
-			boolean didMatch = false;
-			for(int j = 0; j < profile2.size(); j++){
-				
-				//Only need to compare once
-				if(i == 0)
-					actualDepth = Math.max(actualDepth, profile2.get(j).split("\\s+").length);
-				
-				//If we get a match over profile2 on feature i of profile1
-				//We put the match in the vector, and break the loop on profile2, so we can examine the next feature
-				if(profile1.get(i).equals(profile2.get(j))){
-					simVec.put(profile1.get(i), true);
-					didMatch = true;
-					break;
-				}
-				
-			}
-			//If it never matched, just put that characteristic as false
-			if(!didMatch)
-				simVec.put(profile1.get(i), false);
+			String next = featureIterator.next();
+			if((profile1.contains(next) && profile2.contains(next)) || (!profile1.contains(next) && !profile2.contains(next)))
+				simVec.put(next, 0.0);
+			else
+				simVec.put(next, -1.0);
 			
 		}
 		//The constant feature in the McAuley similarity vector
-		simVec.put("Adeeb", true);
+		simVec.put("Adeeb", 1.0);
 		
-		if(maxDepth >= 0){
+		Iterator<String> iterator = tree.keySet().iterator();
+		while(iterator.hasNext()){
 			
-			for(int i = actualDepth; i > maxDepth; i--){
+			String feature = iterator.next();
+			Iterator<String> set = tree.get(feature).iterator();
+			double value = 0.0;
+			while(set.hasNext()){
 				
-				//Find offending branches
-				ArrayList<String> offendingBranches = new ArrayList<String>();
-				Iterator<String> iterator = simVec.keySet().iterator();
-				while(iterator.hasNext()){
-					
-					String curr = iterator.next();
-					if(curr.split("\\s+").length == i)
-						offendingBranches.add(curr);
-					
-				}
-				
-				//Get value for branches
-				while(offendingBranches.size() > 0){
-					
-					iterator = offendingBranches.iterator();
-					String next = iterator.next();
-					String prefix = "";
-					String[] split = next.split("\\s+");
-					for(int k = 0; k < split.length - (i - maxDepth); k++){
-						if(k == 0)
-							prefix = prefix + split[k];
-						else
-							prefix = prefix + " " + split[k];
-					}
-					String[] prefixSplit = prefix.split(" ");
-					//Is the considered branch similar or not?
-					boolean isSimilar = false;
-					isSimilar = isSimilar || simVec.get(next);
-					simVec.remove(next);
-					iterator.remove();
-					
-					while(iterator.hasNext()){
-						
-						next = iterator.next();
-						String[] nextSplit = next.split(" ");
-						
-						//Test if this contains the prefix
-						boolean containsPrefix = true;
-						if(nextSplit.length == prefixSplit.length){
-							for(int a = 0; a < prefixSplit.length; a++)
-								containsPrefix = containsPrefix || nextSplit[a].equals(prefixSplit[a]);
-						}
-						else
-							containsPrefix = false;
-						
-						if(containsPrefix){
-							
-							isSimilar = isSimilar || simVec.get(next);
-							simVec.remove(next);
-							iterator.remove();
-							
-						}
-						
-					}
-					
-					simVec.put(prefix, isSimilar);
-					
-				}
+				String leaf = set.next();
+				value += simVec.get(leaf);
+				simVec.remove(leaf);
 				
 			}
+			simVec.put(feature, value);
 			
 		}
 		
 		double sim[] = new double[indices.size()];
-		Iterator<String> iterator = simVec.keySet().iterator();
+		iterator = simVec.keySet().iterator();
 		while(iterator.hasNext()){
 			
 			String next = iterator.next();
-			if(simVec.get(next))
-				sim[indices.get(next)] = 1.0;
-			else
-				sim[indices.get(next)] = 0.0;
+			sim[indices.get(next)] = simVec.get(next);
 			
 		}
 		
 		return sim;
+		
+	}
+	
+	public int getMaxDepth(){
+		
+		return maxDepth;
 		
 	}
 	
