@@ -57,15 +57,6 @@ public class SocialCircleInduction {
 			
 		}
 		
-		for(int i = 0; i < currCircles.length; i++){
-			
-			System.out.print(i + ": ");
-			for(int j = 0; j < currCircles[i].length; j++)
-				System.out.print(currCircles[i][j] + " ");
-			System.out.println();
-			
-		}
-		
 		double[][] theta = new double[numCircles][egoNetwork.getSimilarityVector(0, 1).length];
 		//Initialize theta_k to the 1-vector
 		//Also note: theta encodes the feature similarity parameters of a circle
@@ -141,7 +132,6 @@ public class SocialCircleInduction {
 			}
 			System.out.println(lTheta(egoNetwork, currCircles, theta, alpha) - omega(theta));
 			
-			//TODO Optimize Circles
 			//CLAIM: each circle is independent of each other and dependent only on the optimal theta
 			//CLAIM: we can use Lloyd's algorithm to optimize a single cluster
 			prevCircles = currCircles;
@@ -301,8 +291,14 @@ public class SocialCircleInduction {
 			
 		}
 		
-		//TODO Convert currCircles to circles
 		String[][] circles = new String[numCircles][];
+		for(int i = 0; i < currCircles.length; i++){
+			
+			circles[i] = new String[currCircles[i].length];
+			for(int j = 0; j < currCircles[i].length; j++)
+				circles[i][j] = egoNetwork.getName(currCircles[i][j]);
+			
+		}
 		
 		return circles;
 		

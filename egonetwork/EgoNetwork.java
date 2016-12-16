@@ -100,32 +100,6 @@ public class EgoNetwork {
 		
 	}
 	
-	public double[][] constructCovMatrix(){
-		
-		double[] means = new double[adjMatrix.length];
-		for(int i = 0; i < means.length; i++){
-			
-			for(int j = 0; j < adjMatrix.length; j++)
-				means[i] += ((double)adjMatrix[j][i])/((double)adjMatrix.length);
-			
-		}
-		
-		double[][] covMatrix = new double[adjMatrix.length][adjMatrix[0].length];
-		for(int i = 0; i < covMatrix.length; i++){
-			
-			for(int j = 0; j < covMatrix[i].length; j++){
-				
-				for(int k = 0; k < adjMatrix.length; k++)
-					covMatrix[i][j] += (((double)adjMatrix[k][i]) - means[i])*(((double)adjMatrix[k][j]) - means[j])/((double)adjMatrix.length);
-				
-			}
-			
-		}
-		
-		return covMatrix;
-		
-	}
-	
 	public String getEgo(){
 		
 		return ego;
@@ -183,6 +157,12 @@ public class EgoNetwork {
 			System.out.println();
 			
 		}
+		
+	}
+	
+	public String getName(int id){
+		
+		return indices[id];
 		
 	}
 	

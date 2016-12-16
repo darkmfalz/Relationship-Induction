@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeSet;
 
+import egonetwork.ChineseWhispersSimilarity;
 import egonetwork.EgoNetwork;
 import egonetwork.McAuleySimilarity;
 
@@ -66,7 +67,7 @@ public class Kaggle {
 			EgoNetwork egoNetwork = new EgoNetwork(Integer.toString(currIndex), indices, adjLists);
 			
 			//Add all the features
-			fileReader = new FileReader("features.txt");
+			/*fileReader = new FileReader("features.txt");
 			bufferedReader = new BufferedReader(fileReader);
 			TreeSet<String> egoFeatures = new TreeSet<String>();
 			HashMap<String, TreeSet<String>> featureList = new HashMap<String, TreeSet<String>>();
@@ -93,10 +94,19 @@ public class Kaggle {
 				
 			}
 			
-			bufferedReader.close();
-			fileReader.close();
-			//TODO understand why McAuley similarity doesn't work
 			egoNetwork.addFeatures(egoFeatures, featureList, new McAuleySimilarity(1, egoFeatures, featureList));
+			
+			bufferedReader.close();
+			fileReader.close();*/
+			
+			ChineseWhispersSimilarity chineseWhispers = new ChineseWhispersSimilarity();
+			TreeSet<String> egoFeatures = new TreeSet<String>();
+			for(int i = 0; i < egoNetwork.numVertices(); i++)
+				egoFeatures.add(i + " " + 1);
+			HashMap<String, TreeSet<String>> featureList = new HashMap<String, TreeSet<String>>();
+			for(int i = 0; i < egoNetwork.numVertices(); i++)
+				featureList.put(egoNetwork.getName(i), chineseWhispers.chineseWhispersVector(egoNetwork, i));
+			egoNetwork.addFeatures(egoFeatures, featureList, chineseWhispers);
 			
 			return egoNetwork;
 			
