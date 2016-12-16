@@ -18,6 +18,16 @@ public class Kaggle {
 	
 	private static int currIndex = -1;
 	private static int maxIndex = 27022;
+
+	public static void testAll(){
+		
+		while(currIndex <= maxIndex){
+			
+			EgoNetwork egoNetwork = createTestableEgoNetwork();
+			
+		}
+		
+	}
 	
 	public static EgoNetwork createTestableEgoNetwork(){
 		
@@ -99,14 +109,14 @@ public class Kaggle {
 			bufferedReader.close();
 			fileReader.close();*/
 			
-			ChineseWhispersSimilarity chineseWhispers = new ChineseWhispersSimilarity(egoNetwork);
+			/*ChineseWhispersSimilarity chineseWhispers = new ChineseWhispersSimilarity(egoNetwork);
 			TreeSet<String> egoFeatures = new TreeSet<String>();
 			for(int i = 0; i < egoNetwork.numVertices(); i++)
 				egoFeatures.add(i + " " + 1);
 			HashMap<String, TreeSet<String>> featureList = new HashMap<String, TreeSet<String>>();
 			for(int i = 0; i < egoNetwork.numVertices(); i++)
 				featureList.put(egoNetwork.getName(i), chineseWhispers.chineseWhispersVector(egoNetwork, i));
-			egoNetwork.addFeatures(egoFeatures, featureList, chineseWhispers);
+			egoNetwork.addFeatures(egoFeatures, featureList, chineseWhispers);*/
 			
 			return egoNetwork;
 			
@@ -125,5 +135,5 @@ public class Kaggle {
 		}
 		
 	}
-
+	
 }

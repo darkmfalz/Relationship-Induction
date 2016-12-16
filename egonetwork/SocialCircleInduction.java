@@ -456,7 +456,7 @@ public class SocialCircleInduction {
 						numMatches++;
 					
 				}
-				if(currCircles[i].length > 0){
+				if(currCircles[i].length > 0 && currCircles[i].length < egoNetwork.numVertices()){
 					
 					val[0] += 0.5*(((double)currCircles[i].length)-numMatches)/((double)currCircles[i].length)
 							+ (((double)prevCircles[i].length)-numMatches)/(((double) egoNetwork.numVertices()) - (double)currCircles[i].length);
